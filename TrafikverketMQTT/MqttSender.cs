@@ -16,6 +16,7 @@ namespace TrafikverketMQTT
 
     public class MqttSender : IMqttSender, IDisposable
     {
+        Encoding encoding = new UTF8Encoding(false);
         private AsyncLock locker = new AsyncLock();
         private readonly ILogger<MqttSender> logger;
         MqttSettings settings;
@@ -51,7 +52,7 @@ namespace TrafikverketMQTT
         public async Task SendAsync<T>(string topic, T data)
         {
             logger.LogTrace("Sending payload to MQTT server");
-            var payload = Encoding.UTF8.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data));
+            var payload = encoding.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data));
             var client = await GetClient();
             await client.PublishAsync(new MqttApplicationMessage(settings.BaseTopic + "/" + topic, payload), settings.QualityOfService.GetValueOrDefault(MqttQualityOfService.AtLeastOnce), settings.RetainLastMessageOnServer.GetValueOrDefault(true));
             logger.LogDebug("MQTT message sent");

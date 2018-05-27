@@ -7,7 +7,7 @@ COPY ./Trafikverket/* ./Trafikverket/
 COPY ./TrafikverketMQTT.sln ./TrafikverketMQTT.sln
 RUN dotnet restore
 
-RUN dotnet publish --output /output --configuration Release
+RUN dotnet publish -o output -c release -r linux-arm
 RUN rm /output/appsettings.json
 
 FROM microsoft/dotnet:2.1-runtime
@@ -16,4 +16,4 @@ COPY --from=build /output /app
 
 WORKDIR /app
 
-ENTRYPOINT [ "dotnet", "TrafikverketMQTT.dll" ]
+ENTRYPOINT [ "dotnet", "TrafikverketMQTT.dll", "/etc/TrafikverketMQTT/TrafikverketMQTT.json" ]
