@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Mqtt;
-using System.Text;
-
+﻿
 namespace TrafikverketMQTT
 {
     public class MqttSettings

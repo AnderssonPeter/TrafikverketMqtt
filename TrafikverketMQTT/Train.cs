@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using System;
 using Trafikverket.Response;
 
 namespace TrafikverketMQTT
@@ -34,6 +34,9 @@ namespace TrafikverketMQTT
         public TrainState State
         { get; set; }
 
+        public int? NumberOfMinutesDelayed
+        { get; set; }
+
         public static readonly Train DepartureStationNotFound = new Train(TrainState.DepartureStationNotFound);
         public static readonly Train DestinationStationNotFound = new Train(TrainState.DestinationStationNotFound);
         public static readonly Train TrainRideNotFound = new Train(TrainState.TrainRideNotFound);
@@ -61,6 +64,7 @@ namespace TrafikverketMQTT
                      AdvertisedTimeAtLocation < EstimatedTimeAtLocation.Value)
             {
                 State = TrainState.Delayed;
+                NumberOfMinutesDelayed = (int)Math.Round((EstimatedTimeAtLocation.Value - trainAnnouncement.AdvertisedTimeAtLocation).TotalMinutes);
             }
             else
             {
@@ -69,6 +73,7 @@ namespace TrafikverketMQTT
         }
     }
 
+    [JsonConverter(typeof(StringEnumConverter), true)]
     public enum TrainState
     {
         OnTime,

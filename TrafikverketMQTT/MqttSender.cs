@@ -1,11 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Nito.AsyncEx;
 using System;
-using System.Collections.Generic;
-using System.Net.Mqtt;
 using System.Text;
 using System.Threading.Tasks;
+using uPLibrary.Networking.M2Mqtt;
 
 namespace TrafikverketMQTT
 {
@@ -26,35 +27,56 @@ namespace TrafikverketMQTT
             settings = settingsOption.Value;
         }
 
-        IMqttClient client = null;
+        MqttClient client = null;
 
-        private async Task<IMqttClient> GetClient()
+        private async Task<MqttClient> GetClient()
         {
             using (await locker.LockAsync())
             {
                 if (client != null && !client.IsConnected)
                 {
-                    client.Dispose();
                     client = null;
                 }
                 if (client == null)
                 {
                     logger.LogTrace("Connecting to MQTT server");
-                    client = await (settings.Port.HasValue ? MqttClient.CreateAsync(settings.HostAddress, settings.Port.Value) : MqttClient.CreateAsync(settings.HostAddress));
-                    logger.LogDebug("Connected to MQTT server, authenticating");
-                    await client.ConnectAsync(settings.UserName == null ? new MqttClientCredentials(settings.ClientId) : new MqttClientCredentials(settings.ClientId, settings.UserName, settings.Password));
+                    client = await Task.Run(() =>
+                    {
+                        var client = settings.Port.HasValue ? new MqttClient(settings.HostAddress, settings.Port.Value, false, MqttSslProtocols.None, null, null) : new MqttClient(settings.HostAddress);
+                        logger.LogDebug("Connected to MQTT server, authenticating");
+                        if (settings.UserName != null) {
+                            client.Connect(settings.ClientId, settings.UserName, settings.Password);
+                        }
+                        else
+                        {
+                            client.Connect(settings.ClientId);
+                        }
+                        return client;
+                    });
+
                     logger.LogDebug("Authenticated with MQTT server");
                 }
                 return client;
             }
         }
+        JsonSerializerSettings jsonSettings = new JsonSerializerSettings()
+        {
+            ContractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new CamelCaseNamingStrategy()
+            },
+            Formatting = Formatting.None
+        };
 
         public async Task SendAsync<T>(string topic, T data)
         {
             logger.LogTrace("Sending payload to MQTT server");
-            var payload = encoding.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data));
+            var payload = encoding.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data, jsonSettings));
             var client = await GetClient();
-            await client.PublishAsync(new MqttApplicationMessage(settings.BaseTopic + "/" + topic, payload), settings.QualityOfService.GetValueOrDefault(MqttQualityOfService.AtLeastOnce), settings.RetainLastMessageOnServer.GetValueOrDefault(true));
+            await Task.Run(() =>
+            {
+                client.Publish(settings.BaseTopic + "/" + topic, payload, (byte)settings.QualityOfService.GetValueOrDefault(MqttQualityOfService.AtLeastOnce), settings.RetainLastMessageOnServer.GetValueOrDefault(false));
+            });
             logger.LogDebug("MQTT message sent");
         }
 
@@ -67,11 +89,11 @@ namespace TrafikverketMQTT
             {
                 if (disposing)
                 {
+                    if (client != null && client.IsConnected)
+                    {
+                        client.Disconnect();
+                    }
                     // TODO: dispose managed state (managed objects).
-                }
-                if (client != null)
-                {
-                    client.Dispose();
                 }
                 // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
                 // TODO: set large fields to null.
@@ -95,5 +117,12 @@ namespace TrafikverketMQTT
             // GC.SuppressFinalize(this);
         }
         #endregion
+    }
+
+    public enum NamingConvention
+    {
+        CamelCase,
+        PascalCase,
+        SnakeCase
     }
 }

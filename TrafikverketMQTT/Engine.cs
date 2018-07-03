@@ -2,14 +2,12 @@
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
-using System.Net.Mqtt;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Trafikverket;
 using Trafikverket.Response;
+using uPLibrary.Networking.M2Mqtt.Exceptions;
 
 namespace TrafikverketMQTT
 {
@@ -61,12 +59,12 @@ namespace TrafikverketMQTT
                 {
                     var train = await GetDataAsync(trainSettings, token);
 
-                    await sender.SendAsync<Train>(trainSettings.Name, train);
+                    await sender.SendAsync(trainSettings.Name, train);
                     if (train.State == TrainState.Delayed && !train.TimeAtLocation.HasValue)
                     {
                         await Task.Delay(30 * 1000, token);
                     }
-                    else if (train.AdvertisedTimeAtLocation.Subtract(DateTime.Now).TotalHours < 1)
+                    else if (train.AdvertisedTimeAtLocation.Subtract(DateTime.Now).TotalHours < 1 && !train.TimeAtLocation.HasValue)
                     {
                         await Task.Delay(60 * 1000, token);
                     }
@@ -80,9 +78,19 @@ namespace TrafikverketMQTT
                     logger.LogWarning(ex, "Failed to communicate with Trafikverket!");
                     await Task.Delay(60 * 1000 * 5, token);
                 }
+                catch (MqttCommunicationException ex)
+                {
+                    logger.LogWarning(ex, "Failed to communicate with Trafikverket!");
+                    await Task.Delay(60 * 1000 * 5, token);
+                }
+                catch (MqttTimeoutException ex)
+                {
+                    logger.LogWarning(ex, "Failed to communicate with Trafikverket!");
+                    await Task.Delay(60 * 1000 * 5, token);
+                }
                 catch (MqttClientException ex)
                 {
-                    logger.LogWarning(ex, "Failed to communicate with MQTT server!");
+                    logger.LogWarning(ex, "Failed to communicate with MQTT server, error code: ", ex.ErrorCode);
                     await Task.Delay(60 * 1000 * 5, token);
                 }
             }
