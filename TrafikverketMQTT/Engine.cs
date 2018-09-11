@@ -42,6 +42,7 @@ namespace TrafikverketMQTT
             while(!token.IsCancellationRequested)
             {
                 var completedTask = await Task.WhenAny(tasks);
+                logger.LogWarning("RunTrain ended!");
                 tasks.Remove(completedTask);
                 if (completedTask.Exception != null)
                 {
@@ -60,18 +61,21 @@ namespace TrafikverketMQTT
                     var train = await GetDataAsync(trainSettings, token);
 
                     await sender.SendAsync(trainSettings.Name, train);
+                    int delay;
                     if (train.State == TrainState.Delayed && !train.TimeAtLocation.HasValue)
                     {
-                        await Task.Delay(30 * 1000, token);
+                        delay = 30 * 1000;
                     }
                     else if (train.AdvertisedTimeAtLocation.Subtract(DateTime.Now).TotalHours < 1 && !train.TimeAtLocation.HasValue)
                     {
-                        await Task.Delay(60 * 1000, token);
+                        delay = 60 * 1000;
                     }
                     else
                     {
-                        await Task.Delay(60 * 1000 * 5, token);
+                        delay = 60 * 1000 * 5;
                     }
+                    logger.LogTrace("Sleeping for {0] seconds", delay);
+                    await Task.Delay(delay, token);
                 }
                 catch (HttpRequestException ex)
                 {

@@ -33,6 +33,7 @@ namespace TrafikverketMQTT
         {
             if (client != null && !client.IsConnected)
             {
+                logger.LogDebug("Client is not connected creating new");
                 client = null;
             }
             if (client == null)
@@ -49,6 +50,7 @@ namespace TrafikverketMQTT
                     {
                         client.Connect(settings.ClientId);
                     }
+                    logger.LogDebug("Authentication completed");
                     return client;
                 });
 
@@ -70,13 +72,16 @@ namespace TrafikverketMQTT
         {
             logger.LogTrace("Sending payload to MQTT server");
             var payload = encoding.GetBytes(Newtonsoft.Json.JsonConvert.SerializeObject(data, jsonSettings));
-
+            logger.LogDebug("Acquiring lock");
             using (await locker.LockAsync())
             {
+                logger.LogDebug("Lock acquired");
                 var client = await GetClient();
+                logger.LogDebug("Sending mqtt message");
                 client.Publish(settings.BaseTopic + "/" + topic, payload, (byte)settings.QualityOfService.GetValueOrDefault(MqttQualityOfService.AtLeastOnce), settings.RetainLastMessageOnServer.GetValueOrDefault(false));
                 logger.LogDebug("MQTT message sent");
             }
+            logger.LogDebug("Lock released");
         }
 
         #region IDisposable Support
