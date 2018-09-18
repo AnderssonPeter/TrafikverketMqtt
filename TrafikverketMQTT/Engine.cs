@@ -74,7 +74,7 @@ namespace TrafikverketMQTT
                     {
                         delay = 60 * 1000 * 5;
                     }
-                    logger.LogTrace("Sleeping for {0] seconds", delay);
+                    logger.LogTrace("Sleeping for {0} seconds", delay);
                     await Task.Delay(delay, token);
                 }
                 catch (HttpRequestException ex)
