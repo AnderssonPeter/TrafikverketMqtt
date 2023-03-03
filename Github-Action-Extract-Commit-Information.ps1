@@ -44,7 +44,7 @@ if ($Version -notmatch '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$') {
     throw "Version must have format #.#.#.#"
 }
 
-$TAGS="$DockerHubName:${VERSION}"
+$TAGS="${DockerHubName}:${VERSION}"
 
 Write-Host ::set-output name=version::$Version
 Write-Host ::set-output name=type::$Type
