@@ -16,7 +16,8 @@ namespace TrafikverketMQTT
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Path.GetDirectoryName(configFile))
-                .AddJsonFile(Path.GetFileName(configFile), optional: false, reloadOnChange: true);
+                .AddJsonFile(Path.GetFileName(configFile), optional: false, reloadOnChange: true)
+                .AddKeyPerFile(directoryPath: "/run/secrets");
 
             Configuration = builder.Build();
 
