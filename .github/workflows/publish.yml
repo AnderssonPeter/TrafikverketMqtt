@@ -14,8 +14,8 @@ jobs:
       id: prep
       shell: pwsh
       run: ./Github-Action-Extract-Commit-Information.ps1 -EventName '${{ github.event_name }}' -Created '${{github.event.release.created_at}}' -Debug $true
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
+#    - name: Set up QEMU
+#      uses: docker/setup-qemu-action@v2
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
     - name: Login to DockerHub
