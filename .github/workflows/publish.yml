@@ -13,7 +13,7 @@ jobs:
     - name: Prepare
       id: prep
       shell: pwsh
-      run: ./Github-Action-Extract-Commit-Information.ps1 -EventName '${{ github.event_name }}' -Created '${{github.event.release.created_at}}' -Debug $true
+      run: ./Github-Action-Extract-Commit-Information.ps1 -DockerHubName "peterandersson/trafikverket-mqtt" -EventName '${{ github.event_name }}' -Created '${{github.event.release.created_at}}' -Debug $true
 #    - name: Set up QEMU
 #      uses: docker/setup-qemu-action@v2
     - name: Set up Docker Buildx

@@ -1,4 +1,4 @@
-param([string] $EventName, [string]$Type, [string]$Created, [bool]$Debug = $false)
+param([string] $DockerHubName, $EventName, [string]$Type, [string]$Created, [bool]$Debug = $false)
 
 if (!$EventName) {
     throw "Must provide EventName parameter"
@@ -44,7 +44,7 @@ if ($Version -notmatch '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$') {
     throw "Version must have format #.#.#.#"
 }
 
-$TAGS="peterandersson/docker-wait-for:${VERSION}"
+$TAGS="$DockerHubName:${VERSION}"
 
 Write-Host ::set-output name=version::$Version
 Write-Host ::set-output name=type::$Type
